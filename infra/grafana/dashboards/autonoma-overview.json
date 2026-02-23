@@ -1,0 +1,130 @@
+{
+  "title": "Autonoma Overview",
+  "uid": "autonoma-overview",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "OTEL Collector Accepted Spans",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "otelcol_receiver_accepted_spans",
+          "legendFormat": "{{receiver}}"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 6
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Workflows Registered",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "max(autonoma_workflows_total)"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 12,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Plugins Registered",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "max(autonoma_plugins_total)"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 6,
+        "w": 12,
+        "h": 4
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Workflow Runs by Status",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(autonoma_workflow_runs_total[5m]))",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 12,
+        "h": 6
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Approvals by Status",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(autonoma_approvals_total[5m]))",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 10,
+        "w": 12,
+        "h": 6
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "LLM Calls by Agent",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (agent_type) (rate(autonoma_llm_calls_total[5m]))",
+          "legendFormat": "{{agent_type}}"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 6
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Plugin Invocations by Plugin",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by (plugin) (rate(autonoma_plugin_invocations_total[5m]))",
+          "legendFormat": "{{plugin}}"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 6
+      }
+    }
+  ]
+}

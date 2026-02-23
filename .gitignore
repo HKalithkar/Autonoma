@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+
+# Vite/Playwright
+playwright-report/
+test-results/
+.vite/
+.playwright-cli/
+
+# Env/Secrets
+.env
+.env.*.local
+
+# OS/Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local DB/test artifacts
+*.db

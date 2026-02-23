@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autonoma-policy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: autonoma-policy
+  template:
+    metadata:
+      labels:
+        app: autonoma-policy
+    spec:
+      containers:
+        - name: policy
+          image: openpolicyagent/opa:0.65.0
+          args: ["run", "--server", "--set=decision_logs.console=true", "/policy/policy.rego"]
+          ports:
+            - containerPort: 8181
+          volumeMounts:
+            - name: policy
+              mountPath: /policy
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: policy
+          configMap:
+            name: autonoma-policy
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autonoma-policy
+data:
+  policy.rego: |
+    package autonoma
+    default allow = false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: policy
+spec:
+  selector:
+    app: autonoma-policy
+  ports:
+    - port: 8181
+      targetPort: 8181

@@ -1,0 +1,161 @@
+services:
+  devtools:
+    build:
+      context: ..
+      dockerfile: infra/devtools.Dockerfile
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+    command: ["sleep", "infinity"]
+    profiles: ["airflow", "jenkins", "n8n"]
+
+  workflow-adapter:
+    build:
+      context: ..
+      dockerfile: apps/workflow_adapter/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      AIRFLOW_URL: ${AIRFLOW_URL:-http://airflow:8080}
+      AIRFLOW_USERNAME: ${AIRFLOW_USERNAME:-admin}
+      AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:-admin}
+      JENKINS_URL: ${JENKINS_URL:-http://jenkins:8080}
+      N8N_BASE_URL: ${N8N_BASE_URL:-http://n8n:5678}
+      WORKFLOW_STATUS_CALLBACK_URL: ${WORKFLOW_STATUS_CALLBACK_URL:-http://api:8000/v1/runs/internal/status}
+      SERVICE_NAME: workflow-adapter
+    ports:
+      - "${WORKFLOW_ADAPTER_PORT:-9004}:9004"
+    profiles: ["airflow", "jenkins", "n8n"]
+
+  n8n:
+    image: n8nio/n8n:${N8N_IMAGE_TAG:-2.7.5}
+    profiles: ["n8n"]
+    environment:
+      N8N_HOST: 0.0.0.0
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE:-false}
+      N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL:-http://localhost:5679}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5679}
+      N8N_LOCAL_URL: http://127.0.0.1:5678
+      N8N_PRESET_OWNER_EMAIL: ${N8N_PRESET_OWNER_EMAIL:-admin@n8n.local}
+      N8N_PRESET_OWNER_PASSWORD: ${N8N_PRESET_OWNER_PASSWORD:-AutonomaN8nDev1}
+      N8N_PRESET_OWNER_FIRST_NAME: ${N8N_PRESET_OWNER_FIRST_NAME:-Autonoma}
+      N8N_PRESET_OWNER_LAST_NAME: ${N8N_PRESET_OWNER_LAST_NAME:-Admin}
+    entrypoint: ["/bin/sh", "/seed/bin/start-with-seed.sh"]
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ../infra/engines/n8n:/seed:ro
+    ports:
+      - "${N8N_PORT:-5679}:5678"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5678/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  airflow:
+    image: apache/airflow:2.9.3
+    profiles: ["airflow"]
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "sqlite:////opt/airflow/airflow.db"
+      AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth"
+      AIRFLOW__WEBSERVER__WEB_SERVER_PORT: "8080"
+      AIRFLOW_UID: "50000"
+    volumes:
+      - ../infra/engines/airflow/dags:/opt/airflow/dags
+    ports:
+      - "${AIRFLOW_PORT:-8083}:8080"
+    command:
+      - "bash"
+      - "-c"
+      - |
+        airflow db init \
+          && airflow users create \
+            --username ${AIRFLOW_USERNAME:-admin} \
+            --password ${AIRFLOW_PASSWORD:-admin} \
+            --firstname Autonoma \
+            --lastname Admin \
+            --role Admin \
+            --email admin@example.com \
+          || true
+        airflow scheduler &
+        exec airflow webserver
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    profiles: ["jenkins"]
+    environment:
+      JAVA_OPTS: >-
+        -Djenkins.install.runSetupWizard=false
+        -Dhudson.security.csrf.GlobalCrumbIssuerConfiguration.DISABLE_CSRF_PROTECTION=true
+    volumes:
+      - ../infra/engines/jenkins/init.groovy.d:/usr/share/jenkins/ref/init.groovy.d
+      - jenkins_home:/var/jenkins_home
+    ports:
+      - "${JENKINS_PORT:-8082}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/login"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  vault:
+    image: hashicorp/vault:1.16.2
+    profiles: ["airflow", "jenkins", "n8n"]
+    command: ["vault", "server", "-config=/vault/config/vault.hcl"]
+    ports:
+      - "${VAULT_PORT:-8200}:8200"
+    volumes:
+      - ../infra/engines/vault:/vault/config
+      - vault_data:/vault/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "vault status -address=http://127.0.0.1:8200 >/dev/null 2>&1 || [ $? -eq 2 ]",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  vault-init:
+    image: hashicorp/vault:1.16.2
+    profiles: ["airflow", "jenkins", "n8n"]
+    user: "0"
+    depends_on:
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: ${VAULT_ADDR:-http://vault:8200}
+      VAULT_ROOT_TOKEN: ${VAULT_ROOT_TOKEN:-}
+      VAULT_AUTONOMA_TOKEN: ${VAULT_TOKEN:-autonoma-dev-token}
+      VAULT_KV_MOUNT: ${VAULT_KV_MOUNT:-kv}
+      VAULT_AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:-admin}
+      VAULT_JENKINS_TOKEN: ${JENKINS_TOKEN:-admin}
+      VAULT_LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      VAULT_LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      VAULT_LANGFUSE_OTLP_AUTH_HEADER: ${LANGFUSE_OTLP_AUTH_HEADER:-}
+      POLICY_PATH: /vault/config/autonoma-policy.hcl
+    volumes:
+      - ../infra/engines/vault:/vault/config
+      - vault_data:/vault/data
+    entrypoint: ["/bin/sh", "/vault/config/vault-init.sh"]
+
+volumes:
+  jenkins_home:
+  vault_data:
+  n8n_data:
+
+networks:
+  default:
+    name: autonoma

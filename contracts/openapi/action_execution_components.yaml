@@ -1,0 +1,28 @@
+openapi: 3.1.0
+info:
+  title: Autonoma Action Execution Components
+  version: v1
+x-version: v1
+components:
+  schemas:
+    ActionRequest:
+      description: Canonical request to execute an action via a tool/plugin.
+      $ref: "../action/v1/action_request.schema.json"
+    ActionPlan:
+      description: Ordered plan of action steps.
+      $ref: "../action/v1/action_plan.schema.json"
+    PolicyDecision:
+      description: Policy evaluation result for a requested action.
+      $ref: "../action/v1/policy_decision.schema.json"
+    ApprovalRequest:
+      description: Request for human approval prior to execution.
+      $ref: "../action/v1/approval_request.schema.json"
+    ApprovalDecision:
+      description: Outcome of an approval decision.
+      $ref: "../action/v1/approval_decision.schema.json"
+    ActionExecutionResult:
+      description: Result of executing an action.
+      $ref: "../action/v1/action_execution_result.schema.json"
+    AuditEvent:
+      description: Audit event emitted for action lifecycle and related activities.
+      $ref: "../action/v1/audit_event.schema.json"

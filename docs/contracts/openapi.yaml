@@ -1,0 +1,527 @@
+openapi: 3.0.3
+info:
+  title: Autonoma API
+  version: 0.0.0
+paths:
+  /healthz:
+    get:
+      summary: Service health
+      responses:
+        "200":
+          description: OK
+  /readyz:
+    get:
+      summary: Service readiness
+      responses:
+        "200":
+          description: OK
+  /v1/auth/login:
+    get:
+      summary: OAuth/OIDC login
+      responses:
+        "302":
+          description: Redirect to IdP
+  /v1/auth/callback:
+    get:
+      summary: OAuth/OIDC callback
+      responses:
+        "302":
+          description: Redirect after session establishment
+  /v1/auth/logout:
+    post:
+      summary: Clear auth session
+      responses:
+        "302":
+          description: Redirect after logout
+  /v1/auth/me:
+    get:
+      summary: Get current actor and roles
+      responses:
+        "200":
+          description: Current identity
+  /v1/workflows:
+    get:
+      summary: List workflows
+      responses:
+        "200":
+          description: Workflow list
+    post:
+      summary: Register workflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - plugin_id
+                - action
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                plugin_id:
+                  type: string
+                action:
+                  type: string
+                input_schema:
+                  type: object
+      responses:
+        "201":
+          description: Workflow registered
+        "400":
+          description: Invalid plugin id or missing fields
+  /v1/workflows/{workflow_id}:
+    delete:
+      summary: Delete workflow
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workflow deleted
+        "400":
+          description: Invalid workflow id
+        "404":
+          description: Workflow not found
+  /v1/workflows/{workflow_id}/runs:
+    post:
+      summary: Trigger workflow run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - environment
+              properties:
+                environment:
+                  type: string
+                  enum: [dev, stage, prod]
+                params:
+                  type: object
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "202":
+          description: Run accepted (or pending approval)
+        "400":
+          description: Invalid workflow id or environment
+  /v1/runs:
+    get:
+      summary: List workflow runs
+      responses:
+        "200":
+          description: Run list
+  /v1/runs/{run_id}:
+    get:
+      summary: Get run status (planned)
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "501":
+          description: Not implemented
+  /v1/admin/permissions:
+    get:
+      summary: RBAC permissions check
+      responses:
+        "200":
+          description: Permission list
+  /v1/plugins:
+    get:
+      summary: List plugins
+      parameters:
+        - name: plugin_type
+          in: query
+          schema:
+            type: string
+          description: Filter plugins by type (workflow/secret/mcp/api/other)
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Filter plugins by name
+      responses:
+        "200":
+          description: Plugin list
+    post:
+      summary: Register plugin
+      responses:
+        "201":
+          description: Plugin registered
+  /v1/plugins/{plugin_id}:
+    put:
+      summary: Update plugin
+      parameters:
+        - name: plugin_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plugin updated
+        "400":
+          description: Invalid plugin id
+        "404":
+          description: Plugin not found
+    delete:
+      summary: Delete plugin
+      parameters:
+        - name: plugin_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plugin deleted
+        "400":
+          description: Invalid plugin id
+        "404":
+          description: Plugin not found
+        "409":
+          description: Plugin has registered workflows
+  /v1/plugins/internal/resolve:
+    get:
+      summary: Resolve plugin metadata (service token required)
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: plugin_type
+          in: query
+          schema:
+            type: string
+          description: Optional plugin type filter
+      responses:
+        "200":
+          description: Plugin metadata
+        "401":
+          description: Invalid token
+        "404":
+          description: Plugin not found
+  /v1/iam/status:
+    get:
+      summary: IAM provider status
+      responses:
+        "200":
+          description: IAM status
+        "403":
+          description: Forbidden
+  /v1/iam/users:
+    get:
+      summary: List IAM users
+      responses:
+        "200":
+          description: User list
+        "501":
+          description: IAM provider not configured
+  /v1/iam/roles:
+    get:
+      summary: List IAM roles
+      responses:
+        "200":
+          description: Role list
+        "501":
+          description: IAM provider not configured
+  /v1/iam/users/{user_id}/roles:
+    get:
+      summary: List IAM roles for a user
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User roles
+        "501":
+          description: IAM provider not configured
+    post:
+      summary: Assign IAM roles to a user
+      parameters:
+        - name: user_id
+        in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Roles assigned
+        "400":
+          description: Invalid role list
+        "501":
+          description: IAM provider not configured
+  /v1/policy/check:
+    post:
+      summary: Evaluate policy for an action
+      responses:
+        "200":
+          description: Policy decision
+  /v1/approvals:
+    get:
+      summary: List approvals
+      responses:
+        "200":
+          description: Approval list
+  /v1/approvals/{approval_id}/decision:
+    post:
+      summary: Submit approval decision
+      parameters:
+        - name: approval_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approval decided
+        "400":
+          description: Invalid approval id
+  /v1/audit:
+    get:
+      summary: List audit events
+      parameters:
+        - name: source
+          in: query
+          schema:
+            type: string
+        - name: event_type
+          in: query
+          schema:
+            type: string
+        - name: actor_id
+          in: query
+          schema:
+            type: string
+        - name: outcome
+          in: query
+          schema:
+            type: string
+        - name: since
+          in: query
+          schema:
+            type: string
+        - name: until
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit event list
+        "400":
+          description: Invalid timestamp filter
+  /v1/audit/ingest:
+    post:
+      summary: Ingest audit events
+      parameters:
+        - name: x-service-token
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Events ingested
+  /v1/agent/configs:
+    get:
+      summary: List LLM configs for agents
+      responses:
+        "200":
+          description: Agent configs
+        "403":
+          description: Forbidden
+  /v1/agent/configs/{agent_type}:
+    put:
+      summary: Update LLM config for an agent
+      parameters:
+        - name: agent_type
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Config updated
+        "400":
+          description: Missing fields
+        "404":
+          description: Unknown agent type
+  /v1/agent/runs:
+    get:
+      summary: List agent runs
+      responses:
+        "200":
+          description: Agent run list
+      x-response-notes:
+        fields:
+          - memory_used: boolean indicating whether vector memory was retrieved
+    post:
+      summary: Create an agent run plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - goal
+                - environment
+              properties:
+                goal:
+                  type: string
+                environment:
+                  type: string
+                  enum: [dev, stage, prod]
+                tools:
+                  type: array
+                  items:
+                    type: string
+                documents:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "201":
+          description: Agent run created
+        "400":
+          description: Invalid input
+      x-response-notes:
+        fields:
+          - memory_used: boolean indicating whether vector memory was retrieved
+  /v1/memory/search:
+    post:
+      summary: Search vector memory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                top_k:
+                  type: integer
+                filters:
+                  type: object
+      responses:
+        "200":
+          description: Memory search results
+        "403":
+          description: Forbidden
+  /v1/gitops/webhook:
+    post:
+      summary: GitOps webhook callback
+      parameters:
+        - name: x-service-token
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Webhook accepted
+  /v1/events/webhook:
+    post:
+      summary: Monitoring or alert webhook to trigger event response
+      parameters:
+        - name: x-service-token
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event accepted
+        "403":
+          description: Denied by policy or safety gate
+  /v1/events:
+    get:
+      summary: List ingested events with response trail
+      responses:
+        "200":
+          description: Event ingestion history
+  /v1/events/stream:
+    get:
+      summary: Stream ingested events (SSE)
+      parameters:
+        - name: since
+          in: query
+          schema:
+            type: string
+          description: ISO timestamp to start streaming from
+        - name: once
+          in: query
+          schema:
+            type: boolean
+          description: Emit current events and close the stream (testing)
+      responses:
+        "200":
+          description: Event stream
+  /v1/chat:
+    post:
+      summary: Send a user chat message and execute tool calls
+      responses:
+        "200":
+          description: Chat response with tool results
+        "400":
+          description: Invalid request
+        "403":
+          description: Forbidden
+  /v1/chat/sessions:
+    get:
+      summary: List chat sessions for the current user
+      responses:
+        "200":
+          description: Session list
+  /v1/chat/sessions/{session_id}/messages:
+    get:
+      summary: List chat messages for a session
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Message list
+  /v1/secrets/resolve:
+    post:
+      summary: Resolve a secret reference via plugin registry
+      parameters:
+        - name: x-service-token
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Secret resolved
+        "400":
+          description: Invalid secret reference
+        "404":
+          description: Secret or plugin not found
+        "502":
+          description: Secret resolver unavailable

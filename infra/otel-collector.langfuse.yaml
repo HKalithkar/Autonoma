@@ -1,0 +1,32 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  logging:
+    loglevel: info
+  otlphttp/langfuse:
+    endpoint: ${LANGFUSE_OTLP_ENDPOINT}
+    headers:
+      Authorization: ${LANGFUSE_OTLP_AUTH_HEADER}
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [logging, otlphttp/langfuse]
+    metrics:
+      receivers: [otlp]
+      exporters: [logging, prometheus]
+    logs:
+      receivers: [otlp]
+      exporters: [logging]

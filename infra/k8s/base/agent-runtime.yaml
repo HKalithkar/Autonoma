@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autonoma-agent-runtime
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: autonoma-agent-runtime
+  template:
+    metadata:
+      labels:
+        app: autonoma-agent-runtime
+    spec:
+      containers:
+        - name: agent-runtime
+          image: autonoma/agent-runtime:latest
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: autonoma-config
+            - secretRef:
+                name: autonoma-secrets
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-runtime
+spec:
+  selector:
+    app: autonoma-agent-runtime
+  ports:
+    - port: 8001
+      targetPort: 8001
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: autonoma-agent-runtime
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: autonoma-agent-runtime
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

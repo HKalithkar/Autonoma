@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "workflow.run.requested",
+  "type": "object",
+  "required": [
+    "correlation_id",
+    "actor_id",
+    "tenant_id",
+    "workflow_id",
+    "requested_at"
+  ],
+  "properties": {
+    "correlation_id": { "type": "string" },
+    "actor_id": { "type": "string" },
+    "tenant_id": { "type": "string" },
+    "workflow_id": { "type": "string" },
+    "input": { "type": "object" },
+    "requested_at": { "type": "string", "format": "date-time" }
+  }
+}

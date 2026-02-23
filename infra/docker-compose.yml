@@ -1,0 +1,370 @@
+services:
+  devtools:
+    build:
+      context: ..
+      dockerfile: infra/devtools.Dockerfile
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+    command: ["sleep", "infinity"]
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      OIDC_AUTH_URL_DOCKER: ${OIDC_AUTH_URL_DOCKER:-http://keycloak:8080/realms/autonoma/protocol/openid-connect/auth}
+      ENVIRONMENT: ${ENVIRONMENT:-dev}
+      SERVICE_NAME: api
+      API_UVICORN_WORKERS: ${API_UVICORN_WORKERS:-4}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      keycloak-init:
+        condition: service_completed_successfully
+
+  agent-runtime:
+    build:
+      context: ..
+      dockerfile: apps/agent_runtime/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      SERVICE_NAME: agent-runtime
+    ports:
+      - "${AGENT_RUNTIME_PORT:-8001}:8001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8001/readyz', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      weaviate:
+        condition: service_healthy
+
+  runtime-orchestrator:
+    build:
+      context: ..
+      dockerfile: apps/runtime_orchestrator/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      SERVICE_NAME: runtime-orchestrator
+      NATS_URL: ${NATS_URL:-nats://nats:4222}
+    ports:
+      - "${RUNTIME_ORCHESTRATOR_PORT:-8003}:8003"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8003/readyz', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+
+  plugin-gateway:
+    build:
+      context: ..
+      dockerfile: apps/plugin_gateway/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      SERVICE_NAME: plugin-gateway
+      PLUGIN_GATEWAY_UVICORN_WORKERS: ${PLUGIN_GATEWAY_UVICORN_WORKERS:-4}
+      PLUGIN_GATEWAY_HTTP_MAX_ATTEMPTS: ${PLUGIN_GATEWAY_HTTP_MAX_ATTEMPTS:-3}
+      PLUGIN_GATEWAY_HTTP_RETRY_BACKOFF_SECONDS: ${PLUGIN_GATEWAY_HTTP_RETRY_BACKOFF_SECONDS:-0.1}
+      PLUGIN_GATEWAY_HTTP_MAX_CONNECTIONS: ${PLUGIN_GATEWAY_HTTP_MAX_CONNECTIONS:-500}
+      PLUGIN_GATEWAY_HTTP_MAX_KEEPALIVE_CONNECTIONS: ${PLUGIN_GATEWAY_HTTP_MAX_KEEPALIVE_CONNECTIONS:-200}
+    restart: unless-stopped
+    ports:
+      - "${PLUGIN_GATEWAY_PORT:-8002}:8002"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8002/readyz', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      api:
+        condition: service_healthy
+      policy:
+        condition: service_healthy
+
+  workflow-adapter:
+    build:
+      context: ..
+      dockerfile: apps/workflow_adapter/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+      SERVICE_NAME: workflow-adapter
+      WORKFLOW_ADAPTER_UVICORN_WORKERS: ${WORKFLOW_ADAPTER_UVICORN_WORKERS:-4}
+    ports:
+      - "${WORKFLOW_ADAPTER_PORT:-9004}:9004"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:9004/healthz', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.4
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin_dev}
+      KC_HOSTNAME: "localhost"
+      KC_HOSTNAME_ADMIN: "localhost"
+      KC_HOSTNAME_PORT: "8080"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: "xforwarded"
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ../infra/keycloak/realm.json:/opt/keycloak/data/import/realm.json
+      - ../infra/keycloak/init.sh:/opt/keycloak/init.sh
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user \"$${KEYCLOAK_ADMIN}\" --password \"$${KEYCLOAK_ADMIN_PASSWORD}\" >/dev/null 2>&1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 60s
+
+  keycloak-init:
+    image: quay.io/keycloak/keycloak:24.0.4
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin_dev}
+    volumes:
+      - ../infra/keycloak/init.sh:/opt/keycloak/init.sh
+    entrypoint: ["/bin/sh", "/opt/keycloak/init.sh"]
+
+  policy:
+    image: openpolicyagent/opa:0.65.0
+    command:
+      - "run"
+      - "--server"
+      - "--set=decision_logs.console=true"
+      - "--log-level=info"
+      - "/policy/policy.rego"
+    ports:
+      - "${OPA_PORT:-8181}:8181"
+    volumes:
+      - ../apps/policy:/policy
+    healthcheck:
+      test: ["CMD", "opa", "version"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-autonoma}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autonoma_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-autonoma}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  weaviate:
+    image: semitechnologies/weaviate:1.24.10
+    environment:
+      QUERY_DEFAULTS_LIMIT: 20
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      DEFAULT_VECTORIZER_MODULE: "none"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      CLUSTER_HOSTNAME: "node1"
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/v1/.well-known/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:v1.10.0
+    profiles: ["qdrant"]
+    ports:
+      - "6333:6333"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:6333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.104.0
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes:
+      - ../infra/otel-collector.yaml:/etc/otel-collector.yaml
+      - ../infra/otel-collector.langfuse.yaml:/etc/otel-collector-langfuse.yaml
+    env_file:
+      - ../.env
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    volumes:
+      - ../infra/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      otel-collector:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+    volumes:
+      - ../infra/grafana/provisioning:/etc/grafana/provisioning
+      - ../infra/grafana/dashboards:/etc/grafana/dashboards
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.57.0-jammy
+    working_dir: /workspace/apps/web
+    volumes:
+      - ..:/workspace
+    environment:
+      PLAYWRIGHT_BASE_URL: http://web:3000
+    depends_on:
+      web:
+        condition: service_started
+      api:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+      keycloak-init:
+        condition: service_completed_successfully
+    entrypoint: ["bash", "-lc"]
+    command: ["npm install && npm run test:e2e"]
+
+volumes: {}
+
+networks:
+  default:
+    name: autonoma

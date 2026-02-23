@@ -1,0 +1,71 @@
+{
+  "plugin": {
+    "name": "airflow",
+    "version": "v1",
+    "plugin_type": "workflow",
+    "endpoint": "http://plugin-gateway:8002/invoke",
+    "actions": {
+      "trigger_dag": {
+        "description": "Trigger an Airflow DAG"
+      }
+    },
+    "allowed_roles": {
+      "run": ["operator", "admin"]
+    },
+    "auth_type": "none",
+    "auth_ref": null,
+    "auth_config": {
+      "invoke_url": "http://workflow-adapter:9004/invoke"
+    }
+  },
+  "workflows": [
+    {
+      "name": "airflow-daily-health",
+      "description": "Trigger daily health DAG",
+      "action": "trigger_dag:dummy_daily_health",
+      "input_schema": {
+        "type": "object",
+        "required": ["service_name"],
+        "properties": {
+          "service_name": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "airflow-cache-refresh",
+      "description": "Trigger cache refresh DAG",
+      "action": "trigger_dag:dummy_cache_refresh",
+      "input_schema": {
+        "type": "object",
+        "required": ["cache_name"],
+        "properties": {
+          "cache_name": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "airflow-cost-report",
+      "description": "Trigger cost report DAG",
+      "action": "trigger_dag:dummy_cost_report",
+      "input_schema": {
+        "type": "object",
+        "required": ["billing_period"],
+        "properties": {
+          "billing_period": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "airflow-index-rebuild",
+      "description": "Trigger index rebuild DAG",
+      "action": "trigger_dag:dummy_index_rebuild",
+      "input_schema": {
+        "type": "object",
+        "required": ["index_name"],
+        "properties": {
+          "index_name": { "type": "string" }
+        }
+      }
+    }
+  ]
+}

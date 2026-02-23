@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonoma.ai/contracts/action/v1/approval_request.schema.json",
+  "title": "ApprovalRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "correlation_id",
+    "created_at",
+    "actor",
+    "approver_roles",
+    "status",
+    "action_request_id"
+  ],
+  "properties": {
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "actor": {
+      "type": "object",
+      "description": "Entity initiating/emitting this object.",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["user", "agent", "system"]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "display_name": {
+          "type": "string"
+        }
+      }
+    },
+    "approval_request_id": {
+      "type": "string"
+    },
+    "action_request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policy_decision_id": {
+      "type": "string"
+    },
+    "approver_roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "approved", "rejected", "expired", "cancelled"],
+      "description": "Expected initial value is pending."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "comments": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "status": {
+          "enum": ["pending", "cancelled"]
+        }
+      }
+    }
+  ]
+}

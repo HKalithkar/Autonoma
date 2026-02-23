@@ -1,0 +1,27 @@
+[project]
+name = "autonoma"
+version = "0.0.0"
+requires-python = ">=3.11"
+
+description = "Autonoma platform monorepo"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["apps"]
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "libs"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+ignore_missing_imports = true

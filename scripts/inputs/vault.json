@@ -1,0 +1,17 @@
+{
+  "plugin": {
+    "name": "vault-resolver",
+    "version": "v1",
+    "plugin_type": "secret",
+    "endpoint": "http://plugin-gateway:8002/invoke",
+    "actions": { "resolve": { "description": "Resolve Vault secret" } },
+    "auth_type": "bearer",
+    "auth_ref": "env:VAULT_TOKEN",
+    "auth_config": {
+      "provider": "vault",
+      "addr": "http://vault:8200",
+      "mount": "kv"
+    }
+  },
+  "workflows": []
+}

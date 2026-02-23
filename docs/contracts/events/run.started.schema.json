@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonoma.dev/contracts/events/run.started.schema.json",
+  "title": "run.started Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "schema_version",
+    "run_id",
+    "timestamp",
+    "correlation_id",
+    "actor_id",
+    "tenant_id",
+    "agent_id",
+    "payload",
+    "visibility_level",
+    "redaction"
+  ],
+  "properties": {
+    "event_id": {"type": "string", "minLength": 1},
+    "event_type": {"const": "run.started"},
+    "schema_version": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "step_id": {"type": "string", "minLength": 1},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "correlation_id": {"type": "string", "minLength": 1},
+    "actor_id": {"type": "string", "minLength": 1},
+    "tenant_id": {"type": "string", "minLength": 1},
+    "agent_id": {"type": "string", "minLength": 1},
+    "payload": {"type": "object"},
+    "visibility_level": {"type": "string", "enum": ["internal", "tenant", "public"]},
+    "redaction": {"type": "string", "enum": ["none", "partial", "full"]}
+  }
+}

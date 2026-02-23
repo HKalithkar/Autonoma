@@ -1,0 +1,56 @@
+{
+  "name": "autonoma-n8n-health-check",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "autonoma-health-check",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "Webhook_Health",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 300],
+      "webhookId": "autonoma-health-check"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "status", "name": "status", "type": "string", "value": "success"},
+            {"id": "workflow", "name": "workflow", "type": "string", "value": "autonoma-n8n-health-check"},
+            {"id": "message", "name": "message", "type": "string", "value": "Health check completed"}
+          ]
+        },
+        "options": {}
+      },
+      "id": "Set_Health",
+      "name": "Set Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {"responseCode": 200}
+      },
+      "id": "Respond_Health",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [740, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {"main": [[{"node": "Set Result", "type": "main", "index": 0}]]},
+    "Set Result": {"main": [[{"node": "Respond", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1"},
+  "pinData": {},
+  "meta": {"instanceId": "autonoma"},
+  "active": true
+}

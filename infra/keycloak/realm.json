@@ -1,0 +1,93 @@
+{
+  "realm": "autonoma",
+  "enabled": true,
+  "sslRequired": "none",
+  "requiredActions": [
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 10
+    },
+    {
+      "alias": "UPDATE_PROFILE",
+      "name": "Update Profile",
+      "providerId": "UPDATE_PROFILE",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 20
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": false,
+      "defaultAction": false,
+      "priority": 30
+    }
+  ],
+  "roles": {
+    "realm": [
+      { "name": "viewer" },
+      { "name": "operator" },
+      { "name": "approver" },
+      { "name": "admin" },
+      { "name": "security_admin" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "autonoma-api",
+      "name": "Autonoma API",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "autonoma-api-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:8000/v1/auth/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "demo_admin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "demo_admin@autonoma.local",
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo_admin_pass",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin"]
+    },
+    {
+      "username": "demo_approver",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "demo_approver@autonoma.local",
+      "firstName": "Demo",
+      "lastName": "Approver",
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo_approver_pass",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["approver"]
+    }
+  ]
+}

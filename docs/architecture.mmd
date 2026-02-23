@@ -1,0 +1,130 @@
+flowchart TB
+  %% Autonoma Architecture (vertical, grouped lanes)
+
+  classDef ui fill:#fef3c7,stroke:#f59e0b,color:#1f2937,stroke-width:1px
+  classDef api fill:#dbeafe,stroke:#2563eb,color:#1e3a8a,stroke-width:1px
+  classDef policy fill:#fee2e2,stroke:#ef4444,color:#7f1d1d,stroke-width:1px
+  classDef agent fill:#e0f2fe,stroke:#0ea5e9,color:#0c4a6e,stroke-width:1px
+  classDef plugins fill:#ede9fe,stroke:#7c3aed,color:#3b0764,stroke-width:1px
+  classDef obs fill:#ecfccb,stroke:#65a30d,color:#365314,stroke-width:1px
+  classDef hitl fill:#fce7f3,stroke:#db2777,color:#831843,stroke-width:1px
+  classDef gitops fill:#e5e7eb,stroke:#374151,color:#111827,stroke-width:1px
+  classDef db fill:#fff7ed,stroke:#f97316,color:#7c2d12,stroke-width:1px
+
+  subgraph UI["Web UI"]
+    WEB["Frontend apps-web"]
+  end
+
+  subgraph API["API Gateway apps-api"]
+    API_APP["FastAPI API"]
+    AUTH["OIDC/RBAC Middleware"]
+    WF_MGR["Workflow Manager"]
+    AUDIT["Audit Writer"]
+    DB["Postgres"]
+  end
+
+  subgraph POLICY["Policy Service"]
+    OPA["OPA Policy Engine"]
+  end
+
+  subgraph AGENT["Agent Runtime"]
+    ORCH["Orchestrator"]
+    COORD["Event Coordinator"]
+    GUARD["Security Guardian / Evals"]
+    MEM["Memory Layer"]
+  end
+
+  subgraph MEMSTORE["Memory Stores"]
+    REDIS["Redis (short-term memory)"]
+    VEC["Vector DB"]
+  end
+
+  subgraph PLUGINS["Plugin Gateway + Registry"]
+    REG["Plugin Registry"]
+    GW["Plugin Gateway"]
+    REF["Reference Plugins"]
+    SECRET["Secret Resolver Plugins"]
+  end
+
+  subgraph OBS["Observability + Audit"]
+    OTEL["OpenTelemetry"]
+    PROM["Prometheus"]
+    GRAF["Grafana"]
+    AUDITLOG["Audit Store"]
+  end
+
+  subgraph HITL["Approvals"]
+    APPROVALS["HITL API + UI"]
+  end
+
+  subgraph GITOPS["GitOps"]
+    GIT["GitOps Plugin + Webhooks"]
+  end
+
+  %% Styling
+  class WEB ui
+  class API_APP,AUTH,WF_MGR,AUDIT api
+  class DB,REDIS,VEC,AUDITLOG db
+  class OPA policy
+  class ORCH,COORD,GUARD,MEM agent
+  class REG,GW,REF,SECRET plugins
+  class OTEL,PROM,GRAF obs
+  class APPROVALS hitl
+  class GIT gitops
+
+  %% UI flows
+  WEB -->|OIDC Login| API_APP
+  WEB -->|API calls| API_APP
+  WEB -->|SSE events| API_APP
+  WEB -->|Approvals| APPROVALS
+
+  %% API internal
+  API_APP --> AUTH
+  API_APP --> WF_MGR
+  API_APP -->|Audit events| AUDIT
+  API_APP --> DB
+  API_APP --> OPA
+  API_APP --> GW
+  API_APP --> ORCH
+  API_APP --> MEM
+  API_APP --> APPROVALS
+
+  %% Policy
+  GW --> OPA
+  ORCH --> OPA
+  API_APP --> OPA
+
+  %% Agent Runtime
+  ORCH --> COORD
+  ORCH --> GUARD
+  ORCH --> MEM
+  MEM --> REDIS
+  MEM --> VEC
+
+  %% Plugin Gateway
+  REG --> GW
+  GW --> REF
+  GW --> SECRET
+  GW --> GIT
+  GIT -->|Webhook callbacks| API_APP
+
+  %% Approvals
+  APPROVALS --> DB
+  APPROVALS --> AUDITLOG
+  APPROVALS --> OPA
+
+  %% Observability
+  API_APP --> OTEL
+  GW --> OTEL
+  ORCH --> OTEL
+  OTEL --> PROM
+  PROM --> GRAF
+  AUDIT --> AUDITLOG
+  AUDITLOG --> API_APP
+  AUDITLOG --> WEB
+
+  %% Dataflow labels
+  API_APP -->|workflow runs| GW
+  GW -->|job_id| API_APP
+  API_APP -->|run status| WEB
+  ORCH -->|LLM calls| OTEL

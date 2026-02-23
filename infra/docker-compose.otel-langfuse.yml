@@ -1,0 +1,3 @@
+services:
+  otel-collector:
+    command: ["--config=/etc/otel-collector-langfuse.yaml"]

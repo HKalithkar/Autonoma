@@ -1,0 +1,5 @@
+{
+  "hosts": ["raw.githubusercontent.com"],
+  "domains": ["langchain.com", "github.com", "openai.com", "docs.python.org"]
+}
+

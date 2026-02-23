@@ -1,0 +1,22 @@
+{
+  "orchestrator": {
+    "api_url": "https://openrouter.ai/api/v1",
+    "model": "nvidia/nemotron-3-nano-30b-a3b:free",
+    "api_key_ref": "env:LLM_API_KEY"
+  },
+  "event_response": {
+    "api_url": "https://openrouter.ai/api/v1",
+    "model": "nvidia/nemotron-3-nano-30b-a3b:free",
+    "api_key_ref": "env:LLM_API_KEY"
+  },
+  "security_guardian": {
+    "api_url": "https://openrouter.ai/api/v1",
+    "model": "nvidia/nemotron-3-nano-30b-a3b:free",
+    "api_key_ref": "env:LLM_API_KEY"
+  },
+  "user_chat": {
+    "api_url": "https://openrouter.ai/api/v1",
+    "model": "nvidia/nemotron-3-nano-30b-a3b:free",
+    "api_key_ref": "env:LLM_API_KEY"
+  }
+}

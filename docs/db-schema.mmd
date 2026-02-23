@@ -1,0 +1,141 @@
+erDiagram
+  PLUGIN {
+    uuid id PK
+    string name
+    string version
+    string plugin_type
+    string endpoint
+    json actions
+    string auth_type
+    string auth_ref
+    string tenant_id
+  }
+
+  WORKFLOW {
+    uuid id PK
+    string name
+    string description
+    uuid plugin_id FK
+    string action
+    string created_by
+    string tenant_id
+  }
+
+  WORKFLOW_RUN {
+    uuid id PK
+    uuid workflow_id FK
+    string status
+    string job_id
+    json params
+    string environment
+    json gitops
+    string requested_by
+    string tenant_id
+  }
+
+  AGENT_RUN {
+    uuid id PK
+    string goal
+    string environment
+    string status
+    json plan
+    string requested_by
+    string correlation_id
+    string tenant_id
+  }
+
+  AGENT_EVALUATION {
+    uuid id PK
+    uuid agent_run_id FK
+    float score
+    string verdict
+    json reasons
+    string correlation_id
+    string actor_id
+    string tenant_id
+  }
+
+  PLUGIN_INVOCATION {
+    uuid id PK
+    uuid plugin_id FK
+    string action
+    string status
+    json params
+    json result
+    string webhook_status
+    string correlation_id
+    string actor_id
+    string tenant_id
+  }
+
+  APPROVAL {
+    uuid id PK
+    uuid workflow_run_id FK
+    uuid workflow_id FK
+    uuid agent_run_id FK
+    string target_type
+    string requested_by
+    string required_role
+    string risk_level
+    string status
+    string decided_by
+    string correlation_id
+    string tenant_id
+  }
+
+  CHAT_SESSION {
+    uuid id PK
+    string title
+    string actor_id
+    string tenant_id
+  }
+
+  CHAT_MESSAGE {
+    uuid id PK
+    uuid session_id FK
+    string role
+    string content
+    json tool_calls
+    json tool_results
+  }
+
+  AGENT_CONFIG {
+    uuid id PK
+    string agent_type
+    string api_url
+    string model
+    string api_key_ref
+    string tenant_id
+  }
+
+  AUDIT_EVENT {
+    uuid id PK
+    string event_type
+    string outcome
+    string source
+    json details
+    string correlation_id
+    string actor_id
+    string tenant_id
+  }
+
+  EVENT_INGEST {
+    uuid id PK
+    string event_type
+    string severity
+    string summary
+    string source
+    string environment
+    string status
+    string correlation_id
+    string tenant_id
+  }
+
+  PLUGIN ||--o{ WORKFLOW : provides
+  WORKFLOW ||--o{ WORKFLOW_RUN : triggers
+  WORKFLOW ||--o{ APPROVAL : requires
+  WORKFLOW_RUN ||--o{ APPROVAL : governs
+  AGENT_RUN ||--o{ APPROVAL : requires
+  AGENT_RUN ||--o{ AGENT_EVALUATION : scores
+  PLUGIN ||--o{ PLUGIN_INVOCATION : invokes
+  CHAT_SESSION ||--o{ CHAT_MESSAGE : contains

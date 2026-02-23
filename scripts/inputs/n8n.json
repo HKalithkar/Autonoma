@@ -1,0 +1,70 @@
+{
+  "plugin": {
+    "name": "n8n",
+    "version": "v1",
+    "plugin_type": "workflow",
+    "endpoint": "http://plugin-gateway:8002/invoke",
+    "actions": {
+      "trigger_workflow": {
+        "description": "Trigger an n8n workflow webhook"
+      }
+    },
+    "allowed_roles": {
+      "run": ["operator", "admin"]
+    },
+    "auth_type": "none",
+    "auth_config": {
+      "invoke_url": "http://workflow-adapter:9004/invoke"
+    }
+  },
+  "workflows": [
+    {
+      "name": "n8n-health-check",
+      "description": "Trigger n8n health check workflow",
+      "action": "trigger_workflow:autonoma-health-check",
+      "input_schema": {
+        "type": "object",
+        "required": ["service_name"],
+        "properties": {
+          "service_name": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "n8n-cache-refresh",
+      "description": "Trigger n8n cache refresh workflow",
+      "action": "trigger_workflow:autonoma-cache-refresh",
+      "input_schema": {
+        "type": "object",
+        "required": ["cache_name"],
+        "properties": {
+          "cache_name": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "n8n-cost-report",
+      "description": "Trigger n8n cost report workflow",
+      "action": "trigger_workflow:autonoma-cost-report",
+      "input_schema": {
+        "type": "object",
+        "required": ["billing_period"],
+        "properties": {
+          "billing_period": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "n8n-index-rebuild",
+      "description": "Trigger n8n index rebuild workflow",
+      "action": "trigger_workflow:autonoma-index-rebuild",
+      "input_schema": {
+        "type": "object",
+        "required": ["index_name"],
+        "properties": {
+          "index_name": {"type": "string"}
+        }
+      }
+    }
+  ]
+}

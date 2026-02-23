@@ -1,0 +1,71 @@
+{
+  "plugin": {
+    "name": "jenkins",
+    "version": "v1",
+    "plugin_type": "workflow",
+    "endpoint": "http://plugin-gateway:8002/invoke",
+    "actions": {
+      "trigger_job": {
+        "description": "Trigger a Jenkins job"
+      }
+    },
+    "allowed_roles": {
+      "run": ["operator", "admin"]
+    },
+    "auth_type": "none",
+    "auth_ref": null,
+    "auth_config": {
+      "invoke_url": "http://workflow-adapter:9004/invoke"
+    }
+  },
+  "workflows": [
+    {
+      "name": "jenkins-dummy-build",
+      "description": "Trigger dummy build job",
+      "action": "trigger_job:dummy-build",
+      "input_schema": {
+        "type": "object",
+        "required": ["branch"],
+        "properties": {
+          "branch": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "jenkins-dummy-test",
+      "description": "Trigger dummy test job",
+      "action": "trigger_job:dummy-test",
+      "input_schema": {
+        "type": "object",
+        "required": ["suite"],
+        "properties": {
+          "suite": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "jenkins-dummy-deploy",
+      "description": "Trigger dummy deploy job",
+      "action": "trigger_job:dummy-deploy",
+      "input_schema": {
+        "type": "object",
+        "required": ["environment"],
+        "properties": {
+          "environment": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "jenkins-dummy-backup",
+      "description": "Trigger dummy backup job",
+      "action": "trigger_job:dummy-backup",
+      "input_schema": {
+        "type": "object",
+        "required": ["backup_bucket"],
+        "properties": {
+          "backup_bucket": { "type": "string" }
+        }
+      }
+    }
+  ]
+}
