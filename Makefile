@@ -58,6 +58,12 @@ dev:
 up:
 	$(COMPOSE) up -d --build
 
+all-up:
+	docker compose -f infra/docker-compose.yml -f infra/docker-compose.engines.yml --profile airflow --profile jenkins --profile n8n up -d --build
+
+all-down:
+	docker compose -f infra/docker-compose.yml -f infra/docker-compose.engines.yml --profile airflow --profile jenkins --profile n8n down
+
 trace-up:
 	$(TRACE_COMPOSE) up -d --build
 	$(TRACE_OTEL_COMPOSE) up -d --build otel-collector
