@@ -1,0 +1,19 @@
+jenkins:
+  systemMessage: "Autonoma Jenkins – Managed by Configuration as Code"
+  numExecutors: 2
+  mode: NORMAL
+
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD:-admin}"
+
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: true
+
+unclassified:
+  location:
+    url: "${JENKINS_URL:-http://localhost:8082/}"

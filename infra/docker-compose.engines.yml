@@ -92,15 +92,16 @@ services:
       retries: 5
 
   jenkins:
-    image: jenkins/jenkins:lts-jdk17
+    build:
+      context: ../infra/engines/jenkins
     profiles: ["jenkins"]
-    environment:
-      JAVA_OPTS: >-
-        -Djenkins.install.runSetupWizard=false
-        -Dhudson.security.csrf.GlobalCrumbIssuerConfiguration.DISABLE_CSRF_PROTECTION=true
     volumes:
-      - ../infra/engines/jenkins/init.groovy.d:/usr/share/jenkins/ref/init.groovy.d
       - jenkins_home:/var/jenkins_home
+      - ../infra/engines/jenkins/init.groovy.d:/usr/share/jenkins/ref/init.groovy.d
+      # Mount JCasC config for automated setup
+      - ../infra/engines/jenkins/casc.yaml:/usr/share/jenkins/ref/casc.yaml:ro
+    env_file:
+      - ../.env
     ports:
       - "${JENKINS_PORT:-8082}:8080"
     healthcheck:
