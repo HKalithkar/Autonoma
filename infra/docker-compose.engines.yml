@@ -93,9 +93,9 @@ services:
 
   jenkins:
     image: jenkins/jenkins:2.541.2-jdk21
-    profiles: ["jenkins"]
     build:
       context: ../infra/engines/jenkins
+    profiles: ["jenkins"]
     volumes:
       - jenkins_home:/var/jenkins_home
       - ../infra/engines/jenkins/init.groovy.d:/usr/share/jenkins/ref/init.groovy.d
