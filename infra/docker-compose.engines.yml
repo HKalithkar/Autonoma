@@ -93,14 +93,10 @@ services:
 
   jenkins:
     image: jenkins/jenkins:2.541.2-jdk21
-    build:
-      context: ../infra/engines/jenkins
     profiles: ["jenkins"]
     volumes:
       - jenkins_home:/var/jenkins_home
-      - ../infra/engines/jenkins/init.groovy.d:/usr/share/jenkins/ref/init.groovy.d
-      # Mount JCasC config for automated setup
-      - ../infra/engines/jenkins/casc.yaml:/usr/share/jenkins/ref/casc.yaml:ro
+      # Removed the init.groovy.d and casc.yaml mounts
     env_file:
       - ../.env
     ports:
