@@ -1,6 +1,5 @@
 {
   "realm": "autonoma",
-  "loginTheme": "autonoma",
   "enabled": true,
   "sslRequired": "none",
   "requiredActions": [
@@ -48,13 +47,10 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "redirectUris": [
-        "http://localhost:8000/v1/auth/callback",
-        "http://localhost:4000/api/auth/callback/keycloak",
-        "http://localhost:4000/*"
+        "http://localhost:8000/v1/auth/callback"
       ],
       "webOrigins": [
-        "http://localhost:3000",
-        "http://localhost:4000"
+        "http://localhost:3000"
       ]
     }
   ],
@@ -92,23 +88,6 @@
         }
       ],
       "realmRoles": ["approver"]
-    },
-    {
-      "username": "demo_operator",
-      "enabled": true,
-      "emailVerified": true,
-      "email": "demo_operator@autonoma.local",
-      "firstName": "Demo",
-      "lastName": "Operator",
-      "requiredActions": [],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "demo_operator_pass",
-          "temporary": false
-        }
-      ],
-      "realmRoles": ["operator"]
     }
   ]
 }

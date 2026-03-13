@@ -107,8 +107,8 @@ engines-n8n-up:
 	docker compose -f infra/docker-compose.engines.yml --profile n8n up -d --build
 
 engines-up:
-	docker compose -f infra/docker-compose.engines.yml --profile airflow --profile jenkins up -d --build
+	docker compose -f infra/docker-compose.engines.yml --profile airflow --profile jenkins --profile n8n up -d --build
 
 engines-down:
-	docker compose -f infra/docker-compose.engines.yml --profile airflow --profile jenkins down
+	docker compose -f infra/docker-compose.engines.yml down
 DOCKER_PLATFORM ?=
